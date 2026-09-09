@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your SplitFlow group expense dashboard.">
+  <title>Dashboard | SplitFlow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="dashboard">
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+  <header class="topbar">
+    <a class="brand" href="index.html#home" aria-label="SplitFlow home"><span>⚡</span> SPLITFLOW</a>
+    <nav class="main-nav" aria-label="Main navigation"><a class="nav-link" href="index.html#home">Home</a><a class="nav-link active" href="dashboard.html">Your space</a><a class="nav-link" href="how-it-works.html">How it works</a><a class="nav-link" href="privacy.html">Privacy</a></nav>
+    <div class="topbar-actions">
+      <button class="icon-button" id="theme-toggle" type="button" aria-label="Toggle theme">☼</button>
+      <div class="profile-wrap"><button class="profile-button hidden" id="profile-button" type="button" aria-label="Open profile menu"></button><div class="profile-popover hidden" id="profile-popover"><div class="profile-heading"><span class="profile-popover-avatar" id="profile-popover-avatar"></span><div><strong id="profile-name">Your profile</strong><small id="profile-email"></small></div></div><p class="profile-bio">Your shared spending space is ready.</p><button class="profile-signout" id="profile-signout" type="button">Sign out <span>→</span></button></div></div>
+      <button class="session-button hidden" id="session-button" type="button"></button>
+      <a class="text-link" id="signin-link" href="index.html#auth">Sign in</a>
+    </div>
+  </header>
+  <main>
+    <section class="view dashboard-view active" id="dashboard-view" aria-labelledby="dashboard-title">
+      <div class="dashboard-heading reveal">
+        <div><div class="eyebrow" id="dashboard-date">YOUR SHARED ROOM</div><h1 id="dashboard-title">Good morning, <em id="user-name">friend</em>.</h1><p>Here is the pulse of your group spending.</p></div>
+        <button class="button button-primary" id="add-expense-button" type="button"><span>＋</span> Add expense</button>
+      </div>
+      <div class="room-bar glass-card"><div class="room-identity"><span class="room-symbol">◈</span><div><small>GROUP ROOM</small><strong id="group-name">Loading room...</strong></div></div><div class="room-invite"><small>INVITE CODE</small><strong id="invite-code">------</strong><button class="copy-button" id="copy-invite" type="button" title="Copy invite code">⧉</button><button class="room-manage" id="manage-groups" type="button">＋ Manage groups</button></div></div>
+      <div class="metrics-grid"><article class="metric-card metric-total glass-card"><div class="metric-label"><span class="metric-icon">↗</span> Total spent</div><strong id="total-spent">₹0.00</strong><small id="expense-count">0 transactions</small><div class="sparkline"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></article><article class="metric-card glass-card"><div class="metric-label"><span class="metric-icon share">◒</span> Your share</div><strong id="your-share">₹0.00</strong><small>Equal split estimate</small><div class="metric-progress"><span id="share-progress"></span></div></article><article class="metric-card glass-card"><div class="metric-label"><span class="metric-icon balance">◇</span> Net balance</div><strong class="positive" id="net-balance">₹0.00</strong><small id="balance-caption">You are settled up</small><div class="balance-tag" id="balance-tag">On track</div></article></div>
+      <div class="transactions-section" id="transactions"><div class="section-heading"><div><div class="eyebrow">ACTIVITY LOG</div><h2>Recent transactions</h2><p class="section-subtitle">A clear record of every shared rupee.</p></div><div class="activity-controls"><span class="transaction-count" id="transaction-count">0 total</span><label class="filter-control"><span>View</span><select id="activity-filter" aria-label="Filter transactions"><option value="all">All activity</option><option value="Food">Food</option><option value="Stay">Stay</option><option value="Travel">Travel</option><option value="Entertainment">Entertainment</option><option value="Shopping">Shopping</option><option value="Other">Other</option></select></label></div></div><div class="activity-strip glass-card"><div class="activity-live"><i></i><span><strong>Live ledger</strong><small>Updates when your room changes</small></span></div><div class="activity-key"><span><i class="key-dot key-green"></i>Paid by you</span><span><i class="key-dot key-purple"></i>Paid by a member</span></div></div><div class="table-wrap glass-card"><table><thead><tr><th>Category</th><th>Title</th><th>Paid by</th><th>Amount</th><th>Date</th></tr></thead><tbody id="expense-list"><tr class="empty-row"><td colspan="5">Loading your transactions...</td></tr></tbody></table></div></div>
+    </section>
+  </main>
+  <div class="modal-backdrop hidden" id="expense-modal"><div class="modal glass-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="close-button" id="close-modal" type="button" aria-label="Close">×</button><div class="eyebrow">NEW TRANSACTION</div><h2 id="modal-title">Add an expense</h2><p>Keep the room up to date.</p><form id="expense-form"><label>What was it for?<input type="text" name="title" placeholder="Dinner at the beach" required maxlength="160"></label><div class="form-row"><label>Amount<input type="number" name="amount" placeholder="0.00" min="0.01" step="0.01" required></label><label>Category<select name="category"><option>Food</option><option>Stay</option><option>Travel</option><option>Entertainment</option><option>Shopping</option><option>Other</option></select></label></div><button class="button button-primary full-width" type="submit">Save expense <span>↗</span></button><p class="form-message" id="expense-message" role="alert"></p></form></div></div>
+  <div class="modal-backdrop hidden" id="group-modal"><div class="modal glass-card" role="dialog" aria-modal="true" aria-labelledby="group-modal-title"><button class="close-button" id="close-group-modal" type="button" aria-label="Close">×</button><div class="eyebrow">YOUR GROUPS</div><h2 id="group-modal-title">Bring your people in.</h2><p>Create a new room or join one with an invite code.</p><div class="group-action-grid"><form id="create-group-form"><strong>Create a group</strong><label>Group name<input type="text" name="name" placeholder="Summer house" required maxlength="120"></label><button class="button button-primary full-width" type="submit">Create group <span>→</span></button></form><form id="join-group-form"><strong>Join a group</strong><label>Invite code<input type="text" name="inviteCode" placeholder="GOA24X" required maxlength="32"></label><button class="button button-secondary full-width" type="submit">Join group <span>→</span></button></form></div><p class="form-message" id="group-message" role="alert"></p></div></div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="config.js?v=1"></script><script src="app.js?v=8"></script>
+</body>
+</html>
