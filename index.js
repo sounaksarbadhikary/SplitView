@@ -1,29 +1,82 @@
-/*
- Copyright (c) 2012 Nevins Bartolomeo <nevins.bartolomeo@gmail.com>
- Copyright (c) 2012 Shane Girish <shaneGirish@gmail.com>
- Copyright (c) 2013 Daniel Wirtz <dcode@dcode.io>
+'use strict';
 
- Redistribution and use in source and binary forms, with or without
- modification, are permitted provided that the following conditions
- are met:
- 1. Redistributions of source code must retain the above copyright
- notice, this list of conditions and the following disclaimer.
- 2. Redistributions in binary form must reproduce the above copyright
- notice, this list of conditions and the following disclaimer in the
- documentation and/or other materials provided with the distribution.
- 3. The name of the author may not be used to endorse or promote products
- derived from this software without specific prior written permission.
+const SqlString = require('sql-escaper');
 
- THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
- IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
- OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
- INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
- NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
- THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+const ConnectionConfig = require('./lib/connection_config.js');
+const parserCache = require('./lib/parsers/parser_cache.js');
 
-module.exports = require("./dist/bcrypt.js");
+const Connection = require('./lib/connection.js');
+
+exports.createConnection = require('./lib/create_connection.js');
+exports.connect = exports.createConnection;
+exports.Connection = Connection;
+exports.ConnectionConfig = ConnectionConfig;
+
+const Pool = require('./lib/pool.js');
+const PoolCluster = require('./lib/pool_cluster.js');
+const createPool = require('./lib/create_pool.js');
+const createPoolCluster = require('./lib/create_pool_cluster.js');
+
+exports.createPool = createPool;
+
+exports.createPoolCluster = createPoolCluster;
+
+exports.createQuery = Connection.createQuery;
+
+exports.Pool = Pool;
+
+exports.PoolCluster = PoolCluster;
+
+exports.createServer = function (handler) {
+  const Server = require('./lib/server.js');
+  const s = new Server();
+  if (handler) {
+    s.on('connection', handler);
+  }
+  return s;
+};
+
+exports.PoolConnection = require('./lib/pool_connection.js');
+exports.authPlugins = require('./lib/auth_plugins');
+exports.escape = SqlString.escape;
+exports.escapeId = SqlString.escapeId;
+exports.format = SqlString.format;
+exports.raw = SqlString.raw;
+
+exports.__defineGetter__(
+  'createConnectionPromise',
+  () => require('./promise.js').createConnection
+);
+
+exports.__defineGetter__(
+  'createPoolPromise',
+  () => require('./promise.js').createPool
+);
+
+exports.__defineGetter__(
+  'createPoolClusterPromise',
+  () => require('./promise.js').createPoolCluster
+);
+
+exports.__defineGetter__('Types', () => require('./lib/constants/types.js'));
+
+exports.__defineGetter__(
+  'TypedParameter',
+  () => require('./lib/packets/typed_parameter.js').types
+);
+
+exports.__defineGetter__('Charsets', () =>
+  require('./lib/constants/charsets.js')
+);
+
+exports.__defineGetter__('CharsetToEncoding', () =>
+  require('./lib/constants/charset_encodings.js')
+);
+
+exports.setMaxParserCache = function (max) {
+  parserCache.setMaxCache(max);
+};
+
+exports.clearParserCache = function () {
+  parserCache.clearCache();
+};

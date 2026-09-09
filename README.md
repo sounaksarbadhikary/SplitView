@@ -1,251 +1,138 @@
-bcrypt.js
-=========
-Optimized bcrypt in JavaScript with zero dependencies. Compatible to the C++ [bcrypt](https://npmjs.org/package/bcrypt)
-binding on node.js and also working in the browser.
+## iconv-lite: Pure JS character encoding conversion
 
-<a href="https://travis-ci.org/dcodeIO/bcrypt.js"><img alt="build static" src="https://travis-ci.org/dcodeIO/bcrypt.js.svg?branch=master" /></a> <a href="https://npmjs.org/package/bcryptjs"><img src="https://img.shields.io/npm/v/bcryptjs.svg" alt=""></a> <a href="https://npmjs.org/package/bcryptjs"><img src="https://img.shields.io/npm/dm/bcryptjs.svg" alt=""></a> <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=dcode%40dcode.io&item_name=Open%20Source%20Software%20Donation&item_number=dcodeIO%2Fbcrypt.js"><img alt="donate ❤" src="https://img.shields.io/badge/donate-❤-ff2244.svg"></a>
+[![NPM Version][npm-version-image]][npm-url]
+[![NPM Downloads][npm-downloads-image]][npm-downloads-url]
+[![License][license-image]][license-url]
+[![NPM Install Size][npm-install-size-image]][npm-install-size-url]
 
+* No need for native code compilation. Quick to install, works on Windows, Web, and in sandboxed environments.
+* Used in popular projects like [Express.js (body_parser)](https://github.com/expressjs/body-parser), 
+  [Grunt](http://gruntjs.com/), [Nodemailer](http://www.nodemailer.com/), [Yeoman](http://yeoman.io/) and others.
+* Faster than [node-iconv](https://github.com/bnoordhuis/node-iconv) (see below for performance comparison).
+* Intuitive encode/decode API, including Streaming support.
+* In-browser usage via [browserify](https://github.com/substack/node-browserify) or [webpack](https://webpack.js.org/) (~180kb gzip compressed with Buffer shim included).
+* Typescript [type definition file](https://github.com/ashtuchkin/iconv-lite/blob/master/lib/index.d.ts) included.
+* React Native is supported (need to install `stream` module to enable Streaming API).
 
-Security considerations
------------------------
-Besides incorporating a salt to protect against rainbow table attacks, bcrypt is an adaptive function: over time, the
-iteration count can be increased to make it slower, so it remains resistant to brute-force search attacks even with
-increasing computation power. ([see](http://en.wikipedia.org/wiki/Bcrypt))
+## Usage
 
-While bcrypt.js is compatible to the C++ bcrypt binding, it is written in pure JavaScript and thus slower ([about 30%](https://github.com/dcodeIO/bcrypt.js/wiki/Benchmark)), effectively reducing the number of iterations that can be
-processed in an equal time span.
+### Basic API
 
-The maximum input length is 72 bytes (note that UTF8 encoded characters use up to 4 bytes) and the length of generated
-hashes is 60 characters.
+```javascript
+var iconv = require('iconv-lite');
 
-Usage
------
-The library is compatible with CommonJS and AMD loaders and is exposed globally as `dcodeIO.bcrypt` if neither is
-available.
+// Convert from an encoded buffer to a js string.
+str = iconv.decode(Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]), 'win1251');
 
-### node.js
+// Convert from a js string to an encoded buffer.
+buf = iconv.encode("Sample input string", 'win1251');
 
-On node.js, the inbuilt [crypto module](http://nodejs.org/api/crypto.html)'s randomBytes interface is used to obtain
-secure random numbers.
-
-`npm install bcryptjs`
-
-```js
-var bcrypt = require('bcryptjs');
-...
+// Check if encoding is supported
+iconv.encodingExists("us-ascii")
 ```
 
-### Browser
+### Streaming API
 
-In the browser, bcrypt.js relies on [Web Crypto API](http://www.w3.org/TR/WebCryptoAPI)'s getRandomValues
-interface to obtain secure random numbers. If no cryptographically secure source of randomness is available, you may
-specify one through [bcrypt.setRandomFallback](https://github.com/dcodeIO/bcrypt.js#setrandomfallbackrandom).
+```javascript
+// Decode stream (from binary data stream to js strings)
+http.createServer(function(req, res) {
+    var converterStream = iconv.decodeStream('win1251');
+    req.pipe(converterStream);
 
-```js
-var bcrypt = dcodeIO.bcrypt;
-...
-```
-
-or
-
-```js
-require.config({
-    paths: { "bcrypt": "/path/to/bcrypt.js" }
+    converterStream.on('data', function(str) {
+        console.log(str); // Do something with decoded strings, chunk-by-chunk.
+    });
 });
-require(["bcrypt"], function(bcrypt) {
-    ...
-});
-```
 
-Usage - Sync
-------------
-To hash a password: 
+// Convert encoding streaming example
+fs.createReadStream('file-in-win1251.txt')
+    .pipe(iconv.decodeStream('win1251'))
+    .pipe(iconv.encodeStream('ucs2'))
+    .pipe(fs.createWriteStream('file-in-ucs2.txt'));
 
-```javascript
-var bcrypt = require('bcryptjs');
-var salt = bcrypt.genSaltSync(10);
-var hash = bcrypt.hashSync("B4c0/\/", salt);
-// Store hash in your password DB.
-```
-
-To check a password: 
-
-```javascript
-// Load hash from your password DB.
-bcrypt.compareSync("B4c0/\/", hash); // true
-bcrypt.compareSync("not_bacon", hash); // false
-```
-
-Auto-gen a salt and hash:
-
-```javascript
-var hash = bcrypt.hashSync('bacon', 8);
-```
-
-Usage - Async
--------------
-To hash a password: 
-
-```javascript
-var bcrypt = require('bcryptjs');
-bcrypt.genSalt(10, function(err, salt) {
-    bcrypt.hash("B4c0/\/", salt, function(err, hash) {
-        // Store hash in your password DB.
+// Sugar: all encode/decode streams have .collect(cb) method to accumulate data.
+http.createServer(function(req, res) {
+    req.pipe(iconv.decodeStream('win1251')).collect(function(err, body) {
+        assert(typeof body == 'string');
+        console.log(body); // full request body string
     });
 });
 ```
 
-To check a password: 
+## Supported encodings
 
-```javascript
-// Load hash from your password DB.
-bcrypt.compare("B4c0/\/", hash, function(err, res) {
-    // res === true
-});
-bcrypt.compare("not_bacon", hash, function(err, res) {
-    // res === false
-});
+ *  All node.js native encodings: utf8, ucs2 / utf16-le, ascii, binary, base64, hex.
+ *  Additional unicode encodings: utf16, utf16-be, utf-7, utf-7-imap, utf32, utf32-le, and utf32-be.
+ *  All widespread singlebyte encodings: Windows 125x family, ISO-8859 family, 
+    IBM/DOS codepages, Macintosh family, KOI8 family, all others supported by iconv library. 
+    Aliases like 'latin1', 'us-ascii' also supported.
+ *  All widespread multibyte encodings: CP932, CP936, CP949, CP950, GB2312, GBK, GB18030, Big5, Shift_JIS, EUC-JP.
 
-// As of bcryptjs 2.4.0, compare returns a promise if callback is omitted:
-bcrypt.compare("B4c0/\/", hash).then((res) => {
-    // res === true
-});
+See [all supported encodings on wiki](https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings).
+
+Most singlebyte encodings are generated automatically from [node-iconv](https://github.com/bnoordhuis/node-iconv). Thank you Ben Noordhuis and libiconv authors!
+
+Multibyte encodings are generated from [Unicode.org mappings](http://www.unicode.org/Public/MAPPINGS/) and [WHATWG Encoding Standard mappings](http://encoding.spec.whatwg.org/). Thank you, respective authors!
+
+## Encoding/decoding speed
+
+Comparison with node-iconv module (1000x256kb, on MacBook Pro, Core i5/2.6 GHz, Node v0.12.0). 
+Note: your results may vary, so please always check on your hardware.
+
+    operation             iconv@2.1.4   iconv-lite@0.4.7
+    ----------------------------------------------------------
+    encode('win1251')     ~96 Mb/s      ~320 Mb/s
+    decode('win1251')     ~95 Mb/s      ~246 Mb/s
+
+## BOM handling
+
+ * Decoding: BOM is stripped by default, unless overridden by passing `stripBOM: false` in options
+   (f.ex. `iconv.decode(buf, enc, {stripBOM: false})`).
+   A callback might also be given as a `stripBOM` parameter - it'll be called if BOM character was actually found.
+ * If you want to detect UTF-8 BOM when decoding other encodings, use [node-autodetect-decoder-stream](https://github.com/danielgindi/node-autodetect-decoder-stream) module.
+ * Encoding: No BOM added, unless overridden by `addBOM: true` option.
+
+## UTF-16 Encodings
+
+This library supports UTF-16LE, UTF-16BE and UTF-16 encodings. First two are straightforward, but UTF-16 is trying to be
+smart about endianness in the following ways:
+ * Decoding: uses BOM and 'spaces heuristic' to determine input endianness. Default is UTF-16LE, but can be 
+   overridden with `defaultEncoding: 'utf-16be'` option. Strips BOM unless `stripBOM: false`.
+ * Encoding: uses UTF-16LE and writes BOM by default. Use `addBOM: false` to override.
+
+## UTF-32 Encodings
+
+This library supports UTF-32LE, UTF-32BE and UTF-32 encodings. Like the UTF-16 encoding above, UTF-32 defaults to UTF-32LE, but uses BOM and 'spaces heuristics' to determine input endianness. 
+ * The default of UTF-32LE can be overridden with the `defaultEncoding: 'utf-32be'` option. Strips BOM unless `stripBOM: false`.
+ * Encoding: uses UTF-32LE and writes BOM by default. Use `addBOM: false` to override. (`defaultEncoding: 'utf-32be'` can also be used here to change encoding.)
+
+## Other notes
+
+When decoding, be sure to supply a Buffer to decode() method, otherwise [bad things usually happen](https://github.com/ashtuchkin/iconv-lite/wiki/Use-Buffers-when-decoding).  
+Untranslatable characters are set to � or ?. No transliteration is currently supported.  
+Node versions 0.10.31 and 0.11.13 are buggy, don't use them (see [#65](https://github.com/ashtuchkin/iconv-lite/issues/65), [#77](https://github.com/ashtuchkin/iconv-lite/issues/77)).  
+
+## Testing
+
+```sh
+git clone git@github.com:ashtuchkin/iconv-lite.git
+cd iconv-lite
+npm install
+npm test
+    
+# To view performance:
+npm run test:performance
+
+# To view test coverage: 
+npm run test:cov
+open coverage/index.html
 ```
 
-Auto-gen a salt and hash:
-
-```javascript
-bcrypt.hash('bacon', 8, function(err, hash) {
-});
-```
-
-**Note:** Under the hood, asynchronisation splits a crypto operation into small chunks. After the completion of a chunk, the execution of the next chunk is placed on the back of [JS event loop queue](https://developer.mozilla.org/en/docs/Web/JavaScript/EventLoop), thus efficiently sharing the computational resources with the other operations in the queue.
-
-API
----
-### setRandomFallback(random)
-
-Sets the pseudo random number generator to use as a fallback if neither node's `crypto` module nor the Web Crypto
-API is available. Please note: It is highly important that the PRNG used is cryptographically secure and that it is
-seeded properly!
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| random          | *function(number):!Array.&lt;number&gt;* | Function taking the number of bytes to generate as its sole argument, returning the corresponding array of cryptographically secure random byte values. 
-| **@see**        |                 | http://nodejs.org/api/crypto.html 
-| **@see**        |                 | http://www.w3.org/TR/WebCryptoAPI/
-
-**Hint:** You might use [isaac.js](https://github.com/rubycon/isaac.js) as a CSPRNG but you still have to make sure to
-seed it properly.
-
-### genSaltSync(rounds=, seed_length=)
-
-Synchronously generates a salt.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| rounds          | *number*        | Number of rounds to use, defaults to 10 if omitted 
-| seed_length     | *number*        | Not supported. 
-| **@returns**    | *string*        | Resulting salt 
-| **@throws**     | *Error*         | If a random fallback is required but not set 
-
-### genSalt(rounds=, seed_length=, callback)
-
-Asynchronously generates a salt.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| rounds          | *number &#124; function(Error, string=)* | Number of rounds to use, defaults to 10 if omitted 
-| seed_length     | *number &#124; function(Error, string=)* | Not supported. 
-| callback        | *function(Error, string=)* | Callback receiving the error, if any, and the resulting salt 
-| **@returns**    | *Promise*       | If `callback` has been omitted
-| **@throws**     | *Error*         | If `callback` is present but not a function
-
-### hashSync(s, salt=)
-
-Synchronously generates a hash for the given string.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| s               | *string*        | String to hash 
-| salt            | *number &#124; string* | Salt length to generate or salt to use, default to 10 
-| **@returns**    | *string*        | Resulting hash 
-
-### hash(s, salt, callback, progressCallback=)
-
-Asynchronously generates a hash for the given string.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| s               | *string*        | String to hash 
-| salt            | *number &#124; string* | Salt length to generate or salt to use 
-| callback        | *function(Error, string=)* | Callback receiving the error, if any, and the resulting hash 
-| progressCallback | *function(number)* | Callback successively called with the percentage of rounds completed (0.0 - 1.0), maximally once per `MAX_EXECUTION_TIME = 100` ms.
-| **@returns**    | *Promise*       | If `callback` has been omitted
-| **@throws**     | *Error*         | If `callback` is present but not a function
-
-### compareSync(s, hash)
-
-Synchronously tests a string against a hash.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| s               | *string*        | String to compare 
-| hash            | *string*        | Hash to test against 
-| **@returns**    | *boolean*       | true if matching, otherwise false 
-| **@throws**     | *Error*         | If an argument is illegal 
-
-### compare(s, hash, callback, progressCallback=)
-
-Asynchronously compares the given data against the given hash.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| s               | *string*        | Data to compare 
-| hash            | *string*        | Data to be compared to 
-| callback        | *function(Error, boolean)* | Callback receiving the error, if any, otherwise the result 
-| progressCallback | *function(number)* | Callback successively called with the percentage of rounds completed (0.0 - 1.0), maximally once per `MAX_EXECUTION_TIME = 100` ms.
-| **@returns**    | *Promise*       | If `callback` has been omitted 
-| **@throws**     | *Error*         | If `callback` is present but not a function
-
-### getRounds(hash)
-
-Gets the number of rounds used to encrypt the specified hash.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| hash            | *string*        | Hash to extract the used number of rounds from 
-| **@returns**    | *number*        | Number of rounds used 
-| **@throws**     | *Error*         | If `hash` is not a string 
-
-### getSalt(hash)
-
-Gets the salt portion from a hash. Does not validate the hash.
-
-| Parameter       | Type            | Description
-|-----------------|-----------------|---------------
-| hash            | *string*        | Hash to extract the salt from 
-| **@returns**    | *string*        | Extracted salt part 
-| **@throws**     | *Error*         | If `hash` is not a string or otherwise invalid 
-
-
-Command line
-------------
-`Usage: bcrypt <input> [salt]`
-
-If the input has spaces inside, simply surround it with quotes.
-
-Downloads
----------
-* [Distributions](https://github.com/dcodeIO/bcrypt.js/tree/master/dist)
-* [ZIP-Archive](https://github.com/dcodeIO/bcrypt.js/archive/master.zip)
-* [Tarball](https://github.com/dcodeIO/bcrypt.js/tarball/master)
-
-Credits
--------
-Based on work started by Shane Girish at [bcrypt-nodejs](https://github.com/shaneGirish/bcrypt-nodejs) (MIT-licensed),
-which is itself based on [javascript-bcrypt](http://code.google.com/p/javascript-bcrypt/) (New BSD-licensed).
-
-License
--------
-New-BSD / MIT ([see](https://github.com/dcodeIO/bcrypt.js/blob/master/LICENSE))
+[npm-downloads-image]: https://badgen.net/npm/dm/iconv-lite
+[npm-downloads-url]: https://npmcharts.com/compare/iconv-lite?minimal=true
+[npm-url]: https://npmjs.org/package/iconv-lite
+[npm-version-image]: https://badgen.net/npm/v/iconv-lite
+[npm-install-size-image]: https://badgen.net/packagephobia/install/iconv-lite
+[npm-install-size-url]: https://packagephobia.com/result?p=iconv-lite
+[license-image]: https://img.shields.io/npm/l/iconv-lite.svg
+[license-url]: https://github.com/ashtuchkin/iconv-lite/blob/HEAD/LICENSE
